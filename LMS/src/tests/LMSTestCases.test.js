@@ -3,6 +3,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { jest } from '@jest/globals';
 
+// Import components
+import AIStudyPlan from '../components/AIStudyPlan';
+import StudyPlans from '../pages/StudyPlans';
+import PDFStudyTool from '../pages/PDFStudyTool';
+
 // Mock Firebase
 jest.mock('../firebase/firestore', () => ({
     saveStudyPlan: jest.fn(),
@@ -22,11 +27,6 @@ jest.mock('../services/openaiService', () => ({
     analyzePDFContent: jest.fn(),
     answerPDFQuestion: jest.fn(),
 }));
-
-// Import components
-import AIStudyPlan from '../components/AIStudyPlan';
-import StudyPlans from '../pages/StudyPlans';
-import PDFStudyTool from '../pages/PDFStudyTool';
 
 // Mock user data
 const mockUser = {
@@ -185,9 +185,9 @@ describe('LMS Platform Test Suite', () => {
 
             await waitFor(() => {
                 expect(screen.getByText('My Study Plans')).toBeInTheDocument();
-                expect(screen.getByText('Math Study Plan')).toBeInTheDocument();
-                expect(screen.getByText('Learn algebra')).toBeInTheDocument();
             });
+            expect(screen.getByText('Math Study Plan')).toBeInTheDocument();
+            expect(screen.getByText('Learn algebra')).toBeInTheDocument();
         });
 
         test('should handle empty study plans', async () => {
@@ -202,8 +202,8 @@ describe('LMS Platform Test Suite', () => {
 
             await waitFor(() => {
                 expect(screen.getByText('No study plans')).toBeInTheDocument();
-                expect(screen.getByText('Create your first study plan from the dashboard.')).toBeInTheDocument();
             });
+            expect(screen.getByText('Create your first study plan from the dashboard.')).toBeInTheDocument();
         });
 
         test('should delete study plan when confirmed', async () => {
@@ -254,10 +254,10 @@ describe('LMS Platform Test Suite', () => {
             render(<PDFStudyTool user={mockUser} userProfile={mockUserProfile} />);
 
             await waitFor(() => {
-                expect(screen.getByText('AI PDF Study Tool')).toBeInTheDocument();
-                expect(screen.getByText('Upload PDF')).toBeInTheDocument();
-                expect(screen.getByText('My Documents (0)')).toBeInTheDocument();
+                expect(screen.getByText('AI Study Assistant')).toBeInTheDocument();
             });
+            expect(screen.getByText('📎 Upload PDF')).toBeInTheDocument();
+            expect(screen.getByText('📄 Documents (0)')).toBeInTheDocument();
         });
 
         test('should display user documents only', async () => {
@@ -286,10 +286,10 @@ describe('LMS Platform Test Suite', () => {
             render(<PDFStudyTool user={mockUser} userProfile={mockUserProfile} />);
 
             await waitFor(() => {
-                expect(screen.getByText('My Documents (1)')).toBeInTheDocument();
-                expect(screen.getByText('Math Notes.pdf')).toBeInTheDocument();
-                expect(screen.queryByText('Other Student Doc.pdf')).not.toBeInTheDocument();
+                expect(screen.getByText('📄 Documents (1)')).toBeInTheDocument();
             });
+            expect(screen.getByText('Math Notes.pdf')).toBeInTheDocument();
+            expect(screen.queryByText('Other Student Doc.pdf')).not.toBeInTheDocument();
         });
 
         test('should save chat history when asking questions', async () => {
@@ -369,8 +369,8 @@ describe('LMS Platform Test Suite', () => {
 
             const fileInput = screen.getByRole('button', { name: /upload pdf/i });
 
-            // Create a mock non-PDF file
-            const file = new File(['content'], 'test.txt', { type: 'text/plain' });
+            // Create a mock non-PDF file (for future testing)
+            // const file = new File(['content'], 'test.txt', { type: 'text/plain' });
 
             // We can't easily test file upload in JSDOM, but we can verify the component renders
             expect(fileInput).toBeInTheDocument();
@@ -395,8 +395,8 @@ describe('LMS Platform Test Suite', () => {
             await waitFor(() => {
                 // Should only show the current user's document
                 expect(screen.getByText('My Doc.pdf')).toBeInTheDocument();
-                expect(screen.queryByText('Other Doc.pdf')).not.toBeInTheDocument();
             });
+            expect(screen.queryByText('Other Doc.pdf')).not.toBeInTheDocument();
         });
 
         test('should filter chat history by user ID', async () => {
@@ -435,8 +435,8 @@ describe('LMS Platform Test Suite', () => {
 
             await waitFor(() => {
                 expect(screen.getByText('My Plan')).toBeInTheDocument();
-                expect(screen.queryByText('Other Plan')).not.toBeInTheDocument();
             });
+            expect(screen.queryByText('Other Plan')).not.toBeInTheDocument();
         });
     });
 
@@ -605,8 +605,8 @@ describe('LMS Platform Test Suite', () => {
             // Verify save was called and modal closes
             await waitFor(() => {
                 expect(mockSaveStudyPlan).toHaveBeenCalled();
-                expect(mockOnClose).toHaveBeenCalled();
             });
+            expect(mockOnClose).toHaveBeenCalled();
         });
 
         test('should complete full PDF analysis and Q&A flow', async () => {
@@ -663,8 +663,8 @@ describe('LMS Platform Test Suite', () => {
             // Verify Q&A flow completes
             await waitFor(() => {
                 expect(mockAnswerPDFQuestion).toHaveBeenCalled();
-                expect(mockSaveChatHistory).toHaveBeenCalled();
             });
+            expect(mockSaveChatHistory).toHaveBeenCalled();
         });
     });
 });

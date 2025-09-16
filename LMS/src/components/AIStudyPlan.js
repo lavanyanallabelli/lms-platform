@@ -99,7 +99,6 @@ const AIStudyPlan = ({ userProfile, user, onClose }) => {
             let taskCount = 0;
 
             // Add selected priority tasks from weekly schedule
-            const scheduleEntries = Object.entries(studyPlan.weeklySchedule);
             const selectedDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].slice(0, availableHours);
 
             for (const day of selectedDays) {

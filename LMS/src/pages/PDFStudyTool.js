@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getPDFDocuments, savePDFDocument, deletePDFDocument, saveChatHistory, getChatHistory, saveGeneralChat, getGeneralChatHistory } from '../firebase/firestore';
 import { analyzePDFContent, answerPDFQuestion, generalAISearch } from '../services/openaiService';
-import LoadingSpinner from '../components/LoadingSpinner';
 
 const PDFStudyTool = ({ user, userProfile }) => {
     // Unified chat interface state
@@ -259,13 +258,6 @@ const PDFStudyTool = ({ user, userProfile }) => {
 
     const handleSendMessage = async () => {
         if (!inputValue.trim() || isLoading) return;
-
-        const userMessage = {
-            id: `user-${Date.now()}`,
-            type: 'user',
-            content: inputValue.trim(),
-            timestamp: new Date().toISOString()
-        };
 
         setInputValue('');
         setIsLoading(true);

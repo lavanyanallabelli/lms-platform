@@ -3,22 +3,24 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Users can read/write their own user document
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
     }
     
     // Teachers can read/write their own courses, students can read all courses
     match /courses/{courseId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && 
-        (resource == null || resource.data.teacherId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.teacherId == request.auth.uid;
     }
     
     // Quizzes are readable by authenticated users, writable by course teachers
     match /quizzes/{quizId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && 
-        (resource == null || 
-         get(/databases/$(database)/documents/courses/$(resource.data.courseId)).data.teacherId == request.auth.uid);
+      allow create: if request.auth != null && 
+        get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.teacherId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        get(/databases/$(database)/documents/courses/$(resource.data.courseId)).data.teacherId == request.auth.uid;
     }
     
     // Results are readable by the student and course teacher
@@ -33,31 +35,31 @@ service cloud.firestore {
     // Resources are readable by all authenticated users
     match /resources/{resourceId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null; // Adjust based on your needs
+      allow create, update, delete: if request.auth != null; // Adjust based on your needs
     }
     
     // Lesson Progress - Students can read/write their own progress
     match /lessonProgress/{progressId} {
-      allow read, write: if request.auth != null && 
-        (resource == null || resource.data.studentId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.studentId == request.auth.uid;
+      allow read, update, delete: if request.auth != null && resource.data.studentId == request.auth.uid;
     }
     
     // Study Notes - Students can read/write their own notes
     match /studyNotes/{noteId} {
-      allow read, write: if request.auth != null && 
-        (resource == null || resource.data.studentId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.studentId == request.auth.uid;
+      allow read, update, delete: if request.auth != null && resource.data.studentId == request.auth.uid;
     }
     
     // Study Plans - Students can read/write their own study plans
     match /studyPlans/{planId} {
-      allow read, write: if request.auth != null && 
-        (resource == null || resource.data.studentId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.studentId == request.auth.uid;
+      allow read, update, delete: if request.auth != null && resource.data.studentId == request.auth.uid;
     }
     
     // PDF Documents - Students can read/write their own PDF documents
     match /pdfDocuments/{docId} {
-      allow read, write: if request.auth != null && 
-        (resource == null || resource.data.studentId == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.studentId == request.auth.uid;
+      allow read, update, delete: if request.auth != null && resource.data.studentId == request.auth.uid;
     }
     
     // Chat History - Students can read/write their own chat history
