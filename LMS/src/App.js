@@ -15,6 +15,13 @@ import PDFStudyTool from './pages/PDFStudyTool';
 import LoadingSpinner from './components/LoadingSpinner';
 import './App.css';
 
+// Import test utilities for debugging (only in development)
+if (process.env.NODE_ENV === 'development') {
+    import('./tests/testStudyPlan').then(module => {
+        window.testStudyPlan = module.default;
+    });
+}
+
 function App() {
     const [user, setUser] = useState(null);
     const [userProfile, setUserProfile] = useState(null);

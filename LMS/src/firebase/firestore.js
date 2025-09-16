@@ -442,3 +442,105 @@ export const deleteStudyNote = async (noteId) => {
         return { success: false, error: error.message };
     }
 };
+
+// Chat History operations for PDF Study Tool
+export const saveChatHistory = async (chatData) => {
+    try {
+        const docData = {
+            ...chatData,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        const docRef = await addDoc(collection(db, 'chatHistory'), docData);
+        return { success: true, id: docRef.id };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+};
+
+export const getChatHistory = async (userId, documentId = null) => {
+    try {
+        let q = query(
+            collection(db, 'chatHistory'),
+            where('userId', '==', userId)
+        );
+
+        if (documentId) {
+            q = query(
+                collection(db, 'chatHistory'),
+                where('userId', '==', userId),
+                where('documentId', '==', documentId)
+            );
+        }
+
+        const querySnapshot = await getDocs(q);
+        const history = [];
+        querySnapshot.forEach((doc) => {
+            history.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Sort by createdAt in JavaScript instead of Firestore
+        history.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+        return { success: true, data: history };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+};
+
+export const deleteChatHistory = async (chatId) => {
+    try {
+        await deleteDoc(doc(db, 'chatHistory', chatId));
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+};
+
+// General Chat History operations (for general AI search)
+export const saveGeneralChat = async (chatData) => {
+    try {
+        const docData = {
+            ...chatData,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        const docRef = await addDoc(collection(db, 'generalChatHistory'), docData);
+        return { success: true, id: docRef.id };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+};
+
+export const getGeneralChatHistory = async (userId) => {
+    try {
+        const q = query(
+            collection(db, 'generalChatHistory'),
+            where('userId', '==', userId)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const history = [];
+        querySnapshot.forEach((doc) => {
+            history.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Sort by createdAt in JavaScript instead of Firestore
+        history.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+        return { success: true, data: history };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+};
+
+export const deleteGeneralChat = async (chatId) => {
+    try {
+        await deleteDoc(doc(db, 'generalChatHistory', chatId));
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+};

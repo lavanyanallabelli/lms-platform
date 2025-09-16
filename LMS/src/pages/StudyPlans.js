@@ -106,7 +106,7 @@ const StudyPlans = ({ user, userProfile }) => {
                     </svg>
                     <h3 className="mt-2 text-sm font-medium text-primary-800 dark:text-primary-200">No study plans</h3>
                     <p className="mt-1 text-sm text-primary-600 dark:text-primary-400">
-                        Create your first AI study plan from the dashboard.
+                        Create your first study plan from the dashboard.
                     </p>
                 </div>
             ) : (
@@ -130,12 +130,6 @@ const StudyPlans = ({ user, userProfile }) => {
                                                 <p className="text-primary-600 dark:text-primary-400 text-sm mt-1">
                                                     {plan.goals}
                                                 </p>
-                                            </div>
-                                            <div className="text-primary-600 dark:text-primary-400">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
                                             </div>
                                         </div>
                                     </div>
@@ -194,7 +188,7 @@ const StudyPlans = ({ user, userProfile }) => {
                                         {plan.aiGenerated && (
                                             <div className="mt-3">
                                                 <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs px-2 py-1 rounded-full">
-                                                    AI Generated
+
                                                 </span>
                                             </div>
                                         )}

@@ -261,7 +261,15 @@ Respond in JSON format:
 
 // AI-Powered Study Plan Generation
 export const generateStudyPlan = async (studentGoals, availableTime, subjects) => {
+    console.log('generateStudyPlan called with:', { studentGoals, availableTime, subjects });
+
     try {
+        // Check if OpenAI API key is available
+        if (!process.env.REACT_APP_OPENAI_API_KEY) {
+            console.warn('OpenAI API key not found, using fallback study plan');
+            throw new Error('OpenAI API key not configured');
+        }
+
         const prompt = `
 You are an AI study planner creating personalized study schedules for K-12 students.
 
@@ -280,7 +288,11 @@ Respond in JSON format:
   "weeklySchedule": {
     "monday": ["subject1", "subject2"],
     "tuesday": ["subject3", "subject1"],
-    // ... for each day
+    "wednesday": ["subject4"],
+    "thursday": ["subject1", "subject2"],
+    "friday": ["review", "practice"],
+    "saturday": ["catch-up"],
+    "sunday": ["rest"]
   },
   "priorities": ["priority1", "priority2", "priority3"],
   "breakRecommendations": "string",
@@ -288,6 +300,7 @@ Respond in JSON format:
 }
 `;
 
+        console.log('Calling OpenAI API...');
         const completion = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages: [{ role: "user", content: prompt }],
@@ -296,21 +309,45 @@ Respond in JSON format:
         });
 
         const response = completion.choices[0].message.content;
-        return JSON.parse(response);
+        console.log('OpenAI response:', response);
+
+        const parsedResult = JSON.parse(response);
+        console.log('Parsed result:', parsedResult);
+        return parsedResult;
     } catch (error) {
         console.error('AI Study Plan Error:', error);
-        return {
-            weeklySchedule: {
-                monday: ["Math", "Science"],
-                tuesday: ["English", "Math"],
-                wednesday: ["Science", "History"],
-                thursday: ["Math", "English"],
-                friday: ["Review", "Practice"]
-            },
-            priorities: ["Math", "Science", "English"],
-            breakRecommendations: "Take 10-minute breaks every hour",
-            milestones: ["Complete weekly goals", "Improve test scores"]
+
+        // Create a personalized fallback based on the selected subjects and available time
+        const weeklySchedule = {};
+        const activeDays = availableTime <= 2 ? 2 : availableTime <= 4 ? 3 : 5;
+        const studyDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].slice(0, activeDays);
+
+        // Distribute subjects intelligently based on available time
+        studyDays.forEach((day, index) => {
+            const subjectIndex = index % subjects.length;
+            weeklySchedule[day] = [subjects[subjectIndex]];
+        });
+
+        // Add weekend activities based on available time
+        if (availableTime >= 4) {
+            weeklySchedule['saturday'] = ['Review', 'Practice'];
+        }
+        weeklySchedule['sunday'] = ['Rest'];
+
+        const fallbackPlan = {
+            weeklySchedule,
+            priorities: subjects.slice(0, 3).concat(['Regular practice', 'Review weak areas']),
+            breakRecommendations: `Take 10-15 minute breaks every ${Math.max(1, Math.floor(availableTime / 7))} hours of study. Stay hydrated and get enough sleep.`,
+            milestones: [
+                'Complete daily study goals',
+                'Weekly progress review',
+                'Monthly assessment',
+                'Improve understanding in weak areas'
+            ]
         };
+
+        console.log('Using fallback study plan:', fallbackPlan);
+        return fallbackPlan;
     }
 };
 
@@ -403,6 +440,88 @@ Respond in JSON format:
             confidence: "low",
             source: "Unable to determine",
             followUpQuestions: ["What is the main topic?", "Can you explain the key concepts?"]
+        };
+    }
+};
+
+// AI-Powered General Search/Chat (like ChatGPT)
+export const generalAISearch = async (query, conversationHistory = []) => {
+    console.log('General AI search called with:', { query, historyLength: conversationHistory.length });
+
+    try {
+        // Check if OpenAI API key is available
+        if (!process.env.REACT_APP_OPENAI_API_KEY) {
+            console.warn('OpenAI API key not found, using fallback response');
+            throw new Error('OpenAI API key not configured');
+        }
+
+        // Build conversation context
+        const messages = [
+            {
+                role: "system",
+                content: `You are an intelligent AI assistant for students. You help with:
+                - Academic questions across all subjects
+                - Study strategies and learning techniques
+                - Problem-solving and explanations
+                - Research and general knowledge
+                - Homework help and concept clarification
+                
+                Provide clear, helpful, and educational responses. When explaining concepts, break them down into understandable parts. For complex topics, provide examples.`
+            }
+        ];
+
+        // Add conversation history
+        conversationHistory.forEach(msg => {
+            messages.push({ role: "user", content: msg.question });
+            messages.push({ role: "assistant", content: msg.answer });
+        });
+
+        // Add current query
+        messages.push({ role: "user", content: query });
+
+        console.log('Calling OpenAI API for general search...');
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 1000
+        });
+
+        const response = completion.choices[0].message.content;
+        console.log('OpenAI general search response received');
+
+        return {
+            answer: response,
+            confidence: 'high',
+            type: 'general',
+            timestamp: new Date().toISOString()
+        };
+    } catch (error) {
+        console.error('AI General Search Error:', error);
+
+        // Fallback responses based on query content
+        let fallbackAnswer = '';
+        const queryLower = query.toLowerCase();
+
+        if (queryLower.includes('math') || queryLower.includes('calculate') || queryLower.includes('solve')) {
+            fallbackAnswer = "I'd be happy to help with math problems! For specific calculations or problem-solving, please provide the exact problem you're working on. I can help with algebra, geometry, calculus, statistics, and more.";
+        } else if (queryLower.includes('science') || queryLower.includes('physics') || queryLower.includes('chemistry')) {
+            fallbackAnswer = "I can help explain scientific concepts! Whether it's physics principles, chemical reactions, biology processes, or earth science topics, feel free to ask specific questions about what you're studying.";
+        } else if (queryLower.includes('history') || queryLower.includes('when') || queryLower.includes('who')) {
+            fallbackAnswer = "I can help with historical questions and research! Ask me about specific events, historical figures, time periods, or cultural developments you're studying.";
+        } else if (queryLower.includes('english') || queryLower.includes('writing') || queryLower.includes('essay')) {
+            fallbackAnswer = "I can assist with English and writing tasks! This includes essay structure, grammar questions, literary analysis, reading comprehension, and writing techniques.";
+        } else if (queryLower.includes('study') || queryLower.includes('learn') || queryLower.includes('tips')) {
+            fallbackAnswer = "Here are some effective study strategies: 1) Break study sessions into 25-50 minute focused blocks, 2) Use active recall by testing yourself, 3) Create summaries and concept maps, 4) Study in a distraction-free environment, 5) Review material regularly rather than cramming.";
+        } else {
+            fallbackAnswer = "I'm here to help with your academic questions! I can assist with math, science, history, English, study strategies, and many other topics. Feel free to ask me anything specific you're working on or curious about.";
+        }
+
+        return {
+            answer: fallbackAnswer,
+            confidence: 'medium',
+            type: 'general',
+            timestamp: new Date().toISOString()
         };
     }
 };

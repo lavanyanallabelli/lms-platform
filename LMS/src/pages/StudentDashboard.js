@@ -194,7 +194,7 @@ const StudentDashboard = ({ user, userProfile }) => {
                     onClick={() => setShowAIStudyPlan(true)}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                 >
-                    🤖 AI Study Plan
+                    Study Plan
                 </button>
             </div>
 
@@ -279,7 +279,7 @@ const StudentDashboard = ({ user, userProfile }) => {
                     <div className="card-header">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-xl font-semibold text-primary-800 dark:text-primary-200">AI Recommendations</h2>
+                                <h2 className="text-xl font-semibold text-primary-800 dark:text-primary-200">Recommendations</h2>
                                 <p className="text-primary-600 dark:text-primary-400 text-sm mt-1">
                                     Personalized learning suggestions based on your performance
                                 </p>
@@ -313,7 +313,7 @@ const StudentDashboard = ({ user, userProfile }) => {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
-                                <p className="text-primary-600 dark:text-primary-400">AI is analyzing your performance...</p>
+                                <p className="text-primary-600 dark:text-primary-400">Analyzing your performance...</p>
                             </div>
                         </div>
                     ) : (
@@ -339,7 +339,7 @@ const StudentDashboard = ({ user, userProfile }) => {
                                                 <h3 className="font-medium text-primary-800 dark:text-primary-200">{rec.title}</h3>
                                                 {rec.aiGenerated && (
                                                     <span className="bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs px-2 py-1 rounded-full">
-                                                        AI
+
                                                     </span>
                                                 )}
                                             </div>

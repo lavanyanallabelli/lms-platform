@@ -5,7 +5,7 @@ import { saveStudyPlan } from '../firebase/firestore';
 const AIStudyPlan = ({ userProfile, user, onClose }) => {
     const [formData, setFormData] = useState({
         goals: '',
-        availableTime: '10',
+        availableTime: '1',
         subjects: []
     });
     const [loading, setLoading] = useState(false);
@@ -49,15 +49,25 @@ const AIStudyPlan = ({ userProfile, user, onClose }) => {
         setError('');
 
         try {
+            console.log('Generating study plan with:', {
+                goals: formData.goals,
+                time: parseInt(formData.availableTime),
+                subjects: formData.subjects
+            });
+
             const result = await generateStudyPlan(
                 formData.goals,
                 parseInt(formData.availableTime),
                 formData.subjects
             );
 
-            if (result.weeklySchedule) {
+            console.log('Study plan generation result:', result);
+
+            if (result && result.weeklySchedule) {
+                console.log('Setting study plan state:', result);
                 setStudyPlan(result);
             } else {
+                console.error('Invalid result format:', result);
                 setError('Failed to generate study plan. Please try again.');
             }
         } catch (error) {
@@ -69,44 +79,74 @@ const AIStudyPlan = ({ userProfile, user, onClose }) => {
     };
 
     const handleSaveStudyPlan = async () => {
-        if (!studyPlan) return;
+        console.log('handleSaveStudyPlan called with studyPlan:', studyPlan);
+        if (!studyPlan) {
+            console.error('No study plan to save');
+            return;
+        }
 
         setSaving(true);
         setError('');
 
         try {
-            // Convert study plan to tasks format
+            // Convert study plan to tasks format - make it proportional to available time
             const tasks = [];
+            const availableHours = parseInt(formData.availableTime);
 
-            // Add weekly schedule tasks
-            Object.entries(studyPlan.weeklySchedule).forEach(([day, subjects]) => {
-                subjects.forEach(subject => {
-                    tasks.push({
-                        id: Date.now().toString() + Math.random(),
-                        title: `${subject} Study`,
-                        description: `Study ${subject} on ${day}`,
-                        day: day,
-                        subject: subject,
-                        completed: false,
-                        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 1 week from now
-                    });
-                });
-            });
+            // Calculate appropriate number of tasks based on hours
+            // 1-2 hours: 2-3 tasks, 3-4 hours: 4-5 tasks, 5-6 hours: 6-7 tasks
+            const maxTasks = Math.min(availableHours + 1, 7);
+            let taskCount = 0;
 
-            // Add priority tasks
-            if (studyPlan.priorities) {
-                studyPlan.priorities.forEach((priority, index) => {
-                    tasks.push({
-                        id: Date.now().toString() + Math.random() + index,
-                        title: priority,
-                        description: `Priority task: ${priority}`,
-                        day: 'any',
-                        subject: 'general',
-                        completed: false,
-                        dueDate: new Date(Date.now() + (index + 1) * 24 * 60 * 60 * 1000).toISOString() // Staggered deadlines
-                    });
+            // Add selected priority tasks from weekly schedule
+            const scheduleEntries = Object.entries(studyPlan.weeklySchedule);
+            const selectedDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].slice(0, availableHours);
+
+            for (const day of selectedDays) {
+                if (taskCount >= maxTasks) break;
+
+                const subjects = studyPlan.weeklySchedule[day];
+                if (subjects && subjects.length > 0) {
+                    // Take only the first subject for each day to avoid overwhelming
+                    const subject = subjects[0];
+                    if (subject && subject !== 'Rest' && subject !== 'Review') {
+                        tasks.push({
+                            id: `task-${taskCount}-${Date.now()}`,
+                            title: `${subject} Study Session`,
+                            description: `Focus on ${subject} - ${Math.ceil(availableHours / selectedDays.length)} hour(s)`,
+                            day: day,
+                            subject: subject,
+                            completed: false,
+                            estimatedHours: Math.ceil(availableHours / selectedDays.length),
+                            dueDate: new Date(Date.now() + (taskCount + 1) * 24 * 60 * 60 * 1000).toISOString()
+                        });
+                        taskCount++;
+                    }
+                }
+            }
+
+            // Add only essential priority tasks if we have room and hours
+            if (studyPlan.priorities && taskCount < maxTasks && availableHours >= 3) {
+                const essentialPriorities = studyPlan.priorities.slice(0, Math.min(2, maxTasks - taskCount));
+                essentialPriorities.forEach((priority, index) => {
+                    if (taskCount < maxTasks) {
+                        tasks.push({
+                            id: `priority-${index}-${Date.now()}`,
+                            title: priority,
+                            description: `Priority focus area`,
+                            day: 'flexible',
+                            subject: 'priority',
+                            completed: false,
+                            estimatedHours: 1,
+                            dueDate: new Date(Date.now() + (taskCount + 3) * 24 * 60 * 60 * 1000).toISOString()
+                        });
+                        taskCount++;
+                    }
                 });
             }
+
+            console.log(`Generated ${tasks.length} tasks for ${availableHours} hours of study time`);
+            console.log('Tasks:', tasks);
 
             const planData = {
                 studentId: user.uid,
@@ -147,7 +187,7 @@ const AIStudyPlan = ({ userProfile, user, onClose }) => {
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold text-primary-800 dark:text-primary-200">
-                            🤖 AI Study Plan Generator
+                            Study Plan Generator
                         </h2>
                         <button
                             onClick={onClose}
@@ -188,12 +228,12 @@ const AIStudyPlan = ({ userProfile, user, onClose }) => {
                                     value={formData.availableTime}
                                     onChange={handleChange}
                                 >
+                                    <option value="1">1 hour</option>
+                                    <option value="2">2 hours</option>
+                                    <option value="3">3 hours</option>
+                                    <option value="4">4 hours</option>
                                     <option value="5">5 hours</option>
-                                    <option value="10">10 hours</option>
-                                    <option value="15">15 hours</option>
-                                    <option value="20">20 hours</option>
-                                    <option value="25">25 hours</option>
-                                    <option value="30">30+ hours</option>
+                                    <option value="6">6 hours</option>
                                 </select>
                             </div>
 
@@ -222,21 +262,21 @@ const AIStudyPlan = ({ userProfile, user, onClose }) => {
                                 </div>
                             )}
 
-                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                                <div className="flex items-start space-x-3">
-                                    <div className="p-2 bg-blue-100 dark:bg-blue-700 rounded-lg">
-                                        <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-medium text-blue-800 dark:text-blue-200">AI-Powered Study Planning</h3>
-                                        <p className="text-blue-600 dark:text-blue-400 text-sm mt-1">
-                                            Our AI will create a personalized study schedule based on your goals, available time, and subjects.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                            {/* <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"> */}
+                            {/* <div className="flex items-start space-x-3"> */}
+                            {/* <div className="p-2 bg-blue-100 dark:bg-blue-700 rounded-lg"> */}
+                            {/* <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"> */}
+                            {/* <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /> */}
+                            {/* </svg> */}
+                            {/* </div> */}
+                            {/* <div> */}
+                            {/* <h3 className="font-medium text-blue-800 dark:text-blue-200">AI-Powered Study Planning</h3> */}
+                            {/* <p className="text-blue-600 dark:text-blue-400 text-sm mt-1"> */}
+                            {/* Our AI will create a personalized study schedule based on your goals, available time, and subjects. */}
+                            {/* </p> */}
+                            {/* </div> */}
+                            {/* </div> */}
+                            {/* </div> */}
 
                             <div className="flex justify-end space-x-3">
                                 <button
@@ -250,16 +290,9 @@ const AIStudyPlan = ({ userProfile, user, onClose }) => {
                                     type="button"
                                     onClick={handleGenerateStudyPlan}
                                     disabled={loading}
-                                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {loading ? (
-                                        <div className="flex items-center">
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                            Generating Plan...
-                                        </div>
-                                    ) : (
-                                        '🤖 Generate AI Study Plan'
-                                    )}
+                                    {loading ? 'Generating...' : 'Generate Plan'}
                                 </button>
                             </div>
                         </form>
@@ -359,7 +392,7 @@ const AIStudyPlan = ({ userProfile, user, onClose }) => {
                                     disabled={saving}
                                     className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {saving ? 'Saving...' : 'Save'}
+                                    {saving ? 'Saving...' : 'Save Plan'}
                                 </button>
                             </div>
                         </div>
